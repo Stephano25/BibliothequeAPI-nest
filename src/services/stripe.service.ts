@@ -9,7 +9,10 @@ export class StripeService {
   constructor(private configService: ConfigService) {
     const secretKey = this.configService.get('STRIPE_SECRET_KEY');
     if (secretKey && secretKey !== 'sk_test_dummy') {
-      this.stripe = new Stripe(secretKey, { apiVersion: '2025-02-24.acacia' });
+      // Correction: Utiliser une version d'API valide
+      this.stripe = new Stripe(secretKey, { 
+        apiVersion: '2023-10-16' as Stripe.LatestApiVersion
+      });
     }
   }
 

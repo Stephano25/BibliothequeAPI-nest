@@ -18,7 +18,8 @@ export class WebhookService {
     const event = this.stripeService.constructWebhookEvent(payload, signature, webhookSecret);
     
     if (event.type === 'payment_intent.succeeded') {
-      const userId = event.data.object.metadata?.user_id;
+      // Correction: Convertir userId en nombre explicitement
+      const userId = Number(event.data.object.metadata?.user_id);
       if (userId) {
         const user = await this.userRepository.findOne({ where: { id: userId } });
         if (user) {
