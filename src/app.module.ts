@@ -1,3 +1,4 @@
+// src/app.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
@@ -20,8 +21,10 @@ import { Borrow } from './borrows/entities/borrow.entity';
       type: 'sqlite',
       database: 'database.sqlite',
       entities: [User, Author, Book, Borrow],
-      synchronize: true,
+      synchronize: true, // ⚠️ Désactiver en production
+      logging: false,
     }),
+    // IMPORTANT: Importer TypeOrmModule.forFeature pour rendre les repositories disponibles
     TypeOrmModule.forFeature([User, Author, Book, Borrow]),
     AuthModule,
     BooksModule,

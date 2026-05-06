@@ -1,18 +1,22 @@
+// src/main.ts - CORRECTION IMPORTANTE
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { ValidationPipe } from '@nestjs/common';
-import * as bodyParser from 'body-parser';
+import { ValidationPipe, RawBodyRequest } from '@nestjs/common';
+import { json, urlencoded } from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true, // CRITIQUE: permet de recevoir le raw body pour Stripe
+  });
   
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe());
   app.enableCors();
   
-  // Important pour Stripe webhook
-  app.use(bodyParser.json({ limit: '10mb' }));
+  // Configuration pour Stripe webhook
+  app.use(json({ limit: '10mb' }));
+  app.use(urlencoded({ extended: true, limit: '10mb' }));
   
   const config = new DocumentBuilder()
     .setTitle('Bibliothèque API')
@@ -25,7 +29,8 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
   
   await app.listen(3000);
-  console.log(`Application running on: http://localhost:3000/api`);
-  console.log(`Swagger UI: http://localhost:3000/api/docs`);
+  console.log(`✅ Application running on: http://localhost:3000/api`);
+  console.log(`📚 Swagger UI: http://localhost:3000/api/docs`);
+  console.log(`💳 Stripe webhook: http://localhost:3000/api/v1/webhooks/stripe`);
 }
 bootstrap();
