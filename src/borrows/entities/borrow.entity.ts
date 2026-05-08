@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne } from 'typeorm';
 import { Book } from '../../books/entities/book.entity';
 import { User } from '../../auth/entities/user.entity';
 
@@ -10,7 +10,7 @@ export class Borrow {
   @Column()
   user_name: string;
 
-  @Column()
+  @Column({ nullable: false })  // Important: Ajouter nullable: false
   book_id: number;
 
   @Column({ type: 'datetime' })

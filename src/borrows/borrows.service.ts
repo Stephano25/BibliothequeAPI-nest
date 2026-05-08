@@ -37,9 +37,26 @@ export class BorrowsService {
       throw new ForbiddenException('Ce livre n\'est pas disponible');
     }
 
+    // Vérifier la limite pour les utilisateurs free
+    if (user.subscription_status === 'free') {
+      const activeBorrows = await this.getActiveBorrowsCount(user.name);
+      if (activeBorrows >= 2) {
+        throw new ForbiddenException({
+          success: false,
+          message: 'Limite d\'emprunts atteinte (maximum 2 pour les utilisateurs free)',
+          data: {
+            current_borrows: activeBorrows,
+            max_borrows: 2,
+            subscription_status: user.subscription_status,
+            upgrade_needed: true,
+          },
+        });
+      }
+    }
+
     const borrow = this.borrowRepository.create({
       user_name: user.name,
-      book_id: bookId,
+      book_id: book.id,
       borrowed_at: new Date(),
       payment_status: user.subscription_status === 'premium' ? 'paid' : 'free',
     });
@@ -71,6 +88,7 @@ export class BorrowsService {
       throw new NotFoundException('Utilisateur non trouvé');
     }
 
+    // Récupérer l'emprunt avec les relations
     const borrow = await this.borrowRepository.findOne({
       where: { id: borrowId, user_name: user.name, returned_at: null },
       relations: ['book'],
@@ -80,18 +98,27 @@ export class BorrowsService {
       throw new NotFoundException('Emprunt non trouvé ou déjà retourné');
     }
 
+    // Vérifier que le livre existe
+    if (!borrow.book) {
+      throw new NotFoundException('Livre associé à cet emprunt non trouvé');
+    }
+
+    // Marquer l'emprunt comme retourné
     borrow.returned_at = new Date();
     await this.borrowRepository.save(borrow);
 
-    const book = borrow.book;
-    book.available = true;
-    await this.bookRepository.save(book);
+    // Récupérer le livre séparément pour éviter les problèmes de relation
+    const book = await this.bookRepository.findOne({ where: { id: borrow.book_id } });
+    if (book) {
+      book.available = true;
+      await this.bookRepository.save(book);
+    }
 
     return {
       success: true,
       message: 'Livre retourné avec succès',
       data: {
-        book_title: book.title,
+        book_title: borrow.book ? borrow.book.title : 'Livre inconnu',
         returned_at: borrow.returned_at,
       },
     };

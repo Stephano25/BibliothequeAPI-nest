@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, CreateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, CreateDateColumn, JoinColumn } from 'typeorm';
 import { Author } from '../../authors/entities/author.entity';
 import { Borrow } from '../../borrows/entities/borrow.entity';
 
@@ -22,7 +22,8 @@ export class Book {
   @Column({ nullable: true, type: 'text' })
   summary: string;
 
-  @ManyToOne(() => Author, (author) => author.books)
+  @ManyToOne(() => Author, (author) => author.books, { eager: true })
+  @JoinColumn({ name: 'authorId' })
   author: Author;
 
   @Column()

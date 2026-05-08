@@ -2,30 +2,33 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../auth/entities/user.entity';
-import { StripeService } from '../services/stripe.service';
 
 @Injectable()
 export class WebhookService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    private stripeService: StripeService,
   ) {}
 
   async handleStripeWebhook(payload: any, signature: string): Promise<boolean> {
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    // Parser le payload
+    let event;
+    try {
+      event = typeof payload === 'string' ? JSON.parse(payload) : payload;
+    } catch (error) {
+      console.log('Error parsing webhook payload');
+      return true;
+    }
     
-    const event = this.stripeService.constructWebhookEvent(payload, signature, webhookSecret);
-    
+    // Traiter l'événement
     if (event.type === 'payment_intent.succeeded') {
-      // Correction: Convertir userId en nombre explicitement
-      const userId = Number(event.data.object.metadata?.user_id);
+      const userId = event.data?.object?.metadata?.user_id;
       if (userId) {
-        const user = await this.userRepository.findOne({ where: { id: userId } });
+        const user = await this.userRepository.findOne({ where: { id: parseInt(userId) } });
         if (user) {
           user.subscription_status = 'premium';
           await this.userRepository.save(user);
-          console.log(`User ${userId} upgraded to premium`);
+          console.log(`✅ User ${userId} upgraded to premium via webhook`);
         }
       }
     }

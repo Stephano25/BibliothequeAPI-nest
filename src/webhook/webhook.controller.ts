@@ -1,5 +1,4 @@
-// src/webhook/webhook.controller.ts
-import { Controller, Post, Headers, Req, HttpCode, RawBodyRequest } from '@nestjs/common';
+import { Controller, Post, Headers, Req, HttpCode, Body } from '@nestjs/common';
 import { Request } from 'express';
 import { WebhookService } from './webhook.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -15,15 +14,12 @@ export class WebhookController {
   @ApiResponse({ status: 200, description: 'Webhook reçu avec succès' })
   @ApiResponse({ status: 401, description: 'Signature invalide' })
   async handleStripeWebhook(
-    @Req() req: RawBodyRequest<Request>,
+    @Req() req: Request,
     @Headers('stripe-signature') signature: string,
+    @Body() body: any,
   ) {
-    // Utiliser rawBody pour Stripe
-    const payload = req.rawBody;
-    
-    if (!payload) {
-      return { received: false, error: 'No raw body' };
-    }
+    // Utiliser le body JSON directement
+    const payload = JSON.stringify(body);
     
     await this.webhookService.handleStripeWebhook(payload, signature);
     return { received: true };

@@ -1,20 +1,18 @@
-// src/main.ts - CORRECTION IMPORTANTE
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { ValidationPipe, RawBodyRequest } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { json, urlencoded } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    rawBody: true, // CRITIQUE: permet de recevoir le raw body pour Stripe
+    rawBody: true, // Important pour Stripe
   });
   
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe());
   app.enableCors();
   
-  // Configuration pour Stripe webhook
   app.use(json({ limit: '10mb' }));
   app.use(urlencoded({ extended: true, limit: '10mb' }));
   
